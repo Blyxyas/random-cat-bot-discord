@@ -1,13 +1,13 @@
 
 from replit import db
 
+import discord #upm package(py-cord)
 from discord.ext import commands
-import discord
 
-import requests
+import requests #upm package(requests)
 import time
 
-from dotenv import load_dotenv
+from dotenv import load_dotenv #upm package(dotenv)
 import os
 
 # We load the environment variables
