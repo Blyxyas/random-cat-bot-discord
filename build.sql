@@ -7,7 +7,7 @@
 -- Table `users` is used to store information about users.
 
 CREATE TABLE IF NOT EXISTS users (
-  guild_id bigint unsigned not null
+  guild_id bigint unsigned not null,
   userid bigint unsigned not null primary key,
   cat_counter int unsigned not null default 0,
   last_time timestamp not null
