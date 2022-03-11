@@ -33,14 +33,12 @@ def fetch(serverguild, userid):
 @commit
 def more_cats(serverguild, cat_counter, userid):
 	# We select the guild from the database
-	cur.execute("SELECT * FROM servers WHERE guild_id = ?", (serverguild, ))
-	cur.execute("UPDATE users SET cat_counter = ?, last_time = ? WHERE userid = ?", (cat_counter, time.time(), userid))
+	cur.execute("UPDATE users SET cat_counter = ?, last_time = ? WHERE userid = ?, guild_id = ?", (cat_counter, time.time(), userid, serverguild))
 
 @commit
 def reset_cats(serverguild, userid):
 	# We select the guild from the database
-	cur.execute("SELECT * FROM servers WHERE guild_id = ?", (serverguild, ))
-	cur.execute("UPDATE users SET cat_counter = 0 WHERE userid = ?", (userid, ))
+	cur.execute("UPDATE users SET cat_counter = 0 WHERE userid = ?, guild_id = ?", (userid, serverguild))
 
 from discord.ext import commands
 from dotenv import load_dotenv
@@ -50,13 +48,6 @@ load_dotenv()
 
 DISCORD_TOKEN = "ODYxMjY3NDAxODE4NjM2Mjg4.YOHTxg.zdXRL30a7T8xoDo2gHWw1kFskIM"
 DEFAULT_PREFIX = ">"
-
-def get_prefix( message):
-	cur.execute("SELECT prefix FROM servers WHERE guild_id = ?", (message.guild.id, ))
-	prefix = cur.fetchone()
-	if prefix is None:
-		return DEFAULT_PREFIX
-	return prefix[0]
 
 bot = discord.Client()
 bot = commands.Bot(command_prefix=DEFAULT_PREFIX)
@@ -78,7 +69,7 @@ async def on_ready():
 async def db(ctx):
 	cur.execute("SELECT * FROM servers WHERE guild_id = ?", (ctx.guild.id, ))
 	if cur.fetchone() is None:
-		cur.execute("INSERT INTO servers VALUES (?, ?)", (ctx.guild.id, get_prefix(ctx.guild.id)))
+		cur.execute("INSERT INTO servers VALUES (?, ?)", (ctx.guild.id, ))
 		con.commit()
 		await ctx.send("The server has been added to the database") 
 	await ctx.send("Database is ready")
@@ -89,7 +80,7 @@ async def on_message(message):
 	cursor = cnx.cursor()
 	if message.author == bot.user:
 		return
-	if message.content.startswith(get_prefix(message.guild.id)):
+	if message.content.startswith(DEFAULT_PREFIX):
 		await bot.process_commands(message)
 	else:
 		# We fetch the user from the database
@@ -103,6 +94,7 @@ async def on_message(message):
 			if keyw in message.content.lower():
 				cat_counter += message.content.lower().count(keyw)
 				more_cats(message.guild.id, cat_counter, message.author.id)
+				print(cat_counter)
 				if cat_counter >= 3:
 					reset_cats(message.guild.id, message.author.id)
 					await message.channel.send("{} you have {} cats (reset)".format(message.author.mention, cat_counter))
