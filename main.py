@@ -68,15 +68,6 @@ async def ping(ctx):
 async def cat(ctx):
 	await reply(ctx)
 
-# Setup de database
-@bot.command
-async def setup(ctx):
-	if ctx.guild.id in db:
-		await ctx.send("The server is already in the database")
-	else:
-		db[ctx.guild.id] = []
-		await ctx.send("The server has been added to the database")
-
 # ─── EVENTS ─────────────────────────────────────────────────────────────────────
 
 from typing import List
@@ -91,8 +82,9 @@ async def on_ready():
 @bot.event
 async def on_message(message):
 
-	# We see if the last time someone used the bot is more than a day, we just clear the list (data is expensive) 	if time() - db[message.guild.id][0] >= 3600 * 24:
-	db[message.guild.id][1].clear()
+	# We see if the last time someone used the bot is more than a day, we just clear
+  the list (data is expensive) 	if time() - db[message.guild.id][0] >= 3600 * 24:
+	    db[message.guild.id][1].clear()
 
 	list_users = db[message.guild.id][1]
 	# We check if the user is registered
