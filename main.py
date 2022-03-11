@@ -91,11 +91,10 @@ async def on_ready():
 @bot.event
 async def on_message(message):
 
-  # We see if the last time someone used the bot is more than a day, we just clear the list (data is expensive) 
-  if time() - db[message.guild.id][0] >= 3600 * 24:
-    db[message.guild.id][1].clear()
+	# We see if the last time someone used the bot is more than a day, we just clear the list (data is expensive) 	if time() - db[message.guild.id][0] >= 3600 * 24:
+	db[message.guild.id][1].clear()
 
-  list_users = db[message.guild.id][1]
+	list_users = db[message.guild.id][1]
 	# We check if the user is registered
 	if message.author.id not in list_users:
 		# We register the user
@@ -107,7 +106,7 @@ async def on_message(message):
 				if keyw in message.content.lower():
 					cat_counter += message.content.lower().count(keyw)
 			
-      # Now we update the user
+	  # Now we update the user
 			list_users[message.author.id].more_cats(cat_counter)
 
 		if time.time() - list_users[message.author.id].last_time > 60:
