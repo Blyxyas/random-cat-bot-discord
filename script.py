@@ -1,6 +1,7 @@
 
 # Database stuff
 
+from replit import db
 import sqlite3 as sq
 import time
 
