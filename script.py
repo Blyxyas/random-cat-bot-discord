@@ -24,9 +24,8 @@ def commit(func):
 
 def fetch(serverguild, userid):
 	# We select the guild from the database
-	cur.execute("SELECT * FROM servers WHERE guild_id = ?", (serverguild, ))
 	# We fetch the result
-	cur.execute("SELECT userid, cat_counter, last_time FROM users WHERE userid = ?", (userid, ))
+	cur.execute("SELECT userid, cat_counter, last_time FROM users WHERE userid = ?, guild_id = ?", (userid, serverguild))
 
 	return cur.fetchone()
 
@@ -42,11 +41,12 @@ def reset_cats(serverguild, userid):
 
 from discord.ext import commands
 from dotenv import load_dotenv
+import os
 
 # We load the .env file
 load_dotenv()
 
-DISCORD_TOKEN = "ODYxMjY3NDAxODE4NjM2Mjg4.YOHTxg.zdXRL30a7T8xoDo2gHWw1kFskIM"
+DISCORD_TOKEN = os.getenv("DISCORD_TOKEN")
 DEFAULT_PREFIX = ">"
 
 bot = discord.Client()
@@ -86,10 +86,10 @@ async def on_message(message):
 		# We fetch the user from the database
 		user = fetch(message.guild.id, message.author.id)
 		if user is None:
-			cursor.execute("INSERT INTO users VALUES (?, ?, ?)", (message.author.id, 0, time.time()))
+			cursor.execute("INSERT INTO users VALUES (?, ?, ?)", (message.guild.id, message.author.id, 0, time.time()))
 			cnx.commit()
 		user = fetch(message.guild.id, message.author.id)
-		cat_counter = user[1]
+		cat_counter = user[2]
 		for keyw in ["cat", "kitty", "kitten", "kittycat", "kittens", "kittycats", "kitties"]:
 			if keyw in message.content.lower():
 				cat_counter += message.content.lower().count(keyw)
