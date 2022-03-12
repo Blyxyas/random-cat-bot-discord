@@ -36,7 +36,7 @@ async def reply(message):
 		embed.set_image(url=cat['url'])
 		await message.channel.send(embed=embed)
 
-async def reply_breed(message, breed, id):
+async def reply_breed(message, breed):
 	# We reply with a random cat image
 	cat = requests.get(f"https://api.thecatapi.com/v1/images/search?breed_ids={ids[breeds.index(breed)]}").json()[0]['url']
 
@@ -124,15 +124,21 @@ async def on_message(message):
 		for keyw in ["cat", "kitty", "kitten", "kittycat", "kittens", "kittycats", "kitties"]:
 			if keyw in message.content.lower():
 				new_cat_counter += message.content.lower().count(keyw)
-		
+
 		if currenttime - user[2] > 60:
 			user[1] = 0
 	# Now we update the user
 		user[1] += new_cat_counter
 		user[2] = currenttime
-		
+
 		if user[1] >= 3:
-			await reply(message)
+			if any(x in message.content.lower() for x in breeds):
+				for breed in breeds:
+					if breed in message.content.lower():
+						await reply_breed(message, breed)
+			else:
+				await reply(message)
+			
 			user[1] = 0
 
 bot.run(DISCORD_TOKEN)
