@@ -105,7 +105,7 @@ async def on_message(message):
 
 	if message.content.startswith(DEFAULT_PREFIX):
 		await bot.process_commands(message)
-    	return
+    return
 
 	serverid = str(message.guild.id)
 	authid = str(message.author.id)
