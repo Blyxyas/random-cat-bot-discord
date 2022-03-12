@@ -1,5 +1,4 @@
 
-from http import server
 from replit import db
 
 import discord #upm package(py-cord)
@@ -8,13 +7,13 @@ from discord.ext import commands
 import requests #upm package(requests)
 from time import time
 
-from dotenv import load_dotenv #upm package(dotenv)
+from dotenv import load_dotenv, find_dotenv #upm package(dotenv)
 import os
 
 import pprint
 
 # We load the environment variables
-load_dotenv()
+load_dotenv("x.env")
 
 DISCORD_TOKEN = os.environ['DISCORD_TOKEN']
  
@@ -113,14 +112,31 @@ async def on_message(message):
 
 	serverid = str(message.guild.id)
 	authid = str(message.author.id)
+	currenttime = int(time())
 	if serverid not in db:
 		# We add the server to the database
-		db[serverid] = [int(time()), {}]
+		db[serverid] = [currenttime, {}]
 
 	if authid not in db[serverid][1]:
 		# We add the user to the database
 		db[serverid][1][authid] = [message.guild.id, 1, int(time())]
 	
-	
+	# We check if the user is talking about a cat
+	if any(x in message.content.lower() for x in ["cat", "kitty", "kitten", "kittycat", "kittens", "kittycats", "kitties"]):
+		user = db[serverid][1][authid]
+		new_cat_counter = 0
+		for keyw in ["cat", "kitty", "kitten", "kittycat", "kittens", "kittycats", "kitties"]:
+			if keyw in message.content.lower():
+				new_cat_counter += message.content.lower().count(keyw)
+		
+		if currenttime - user[2] > 60:
+			user[1] = 0
+	# Now we update the user
+		user[1] += new_cat_counter
+		user[2] = currenttime
+		
+		if user[1] >= 3:
+			await reply(message)
+			user[1] = 0
 
 bot.run(DISCORD_TOKEN)
