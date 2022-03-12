@@ -85,6 +85,14 @@ from typing import List
 
 @bot.event
 async def on_message(message):
+	serverid = str(message.guild.id)
+	authid = str(message.author.id)
+	user = db[serverid][1][authid]
+	currenttime = int(time())
+	
+	if currenttime - db[serverid][0] > 3600:
+			del db[serverid]
+	
 	if message.author == bot.user:
 		return
 
@@ -92,9 +100,7 @@ async def on_message(message):
 		await bot.process_commands(message)
 		return
 
-	serverid = str(message.guild.id)
-	authid = str(message.author.id)
-	currenttime = int(time())
+	
 	if serverid not in db:
 		# We add the server to the database
 		db[serverid] = [currenttime, {}]
@@ -103,7 +109,6 @@ async def on_message(message):
 		# We add the user to the database
 		db[serverid][1][authid] = [message.guild.id, 1, int(time())]
 	
-	user = db[serverid][1][authid]
 	# We check if the user is talking about a cat
 	if any(x in message.content.lower() for x in ["cat", "kitty", "kitten", "kittycat", "kittens", "kittycats", "kitties"]):
 		new_cat_counter = 0
@@ -113,14 +118,15 @@ async def on_message(message):
 
 		print(currenttime - user[2])
 
-		if currenttime - user[2] >= 60:
+		if currenttime - user[2] >= 30:
 			user[1] = 0
 	# Now we update the user
 		user[1] += new_cat_counter
 		user[2] = currenttime
 		print(user[1])
 
-	if user[1] >= 3 or any(x in message.content.lower() for x in breeds):
+
+	if user[1] >= 3 or (any(x in message.content.lower() for x in breeds) and user[1] >= 1):
 		if user[1] >= 3:	
 			await reply(message)
 		else:
