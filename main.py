@@ -1,14 +1,17 @@
 
+from http import server
 from replit import db
 
 import discord #upm package(py-cord)
 from discord.ext import commands
 
 import requests #upm package(requests)
-import time
+from time import time
 
 from dotenv import load_dotenv #upm package(dotenv)
 import os
+
+import pprint
 
 # We load the environment variables
 load_dotenv()
@@ -38,6 +41,14 @@ async def reply(message):
 		embed.set_image(url=cat['url'])
 		await message.channel.send(embed=embed)
 
+async def reply_breed(message, breed, id):
+	# We reply with a random cat image
+	cat = requests.get(f"https://api.thecatapi.com/v1/images/search?breed_ids={ids[breeds.index(breed)]}").json()[0]['url']
+
+	embed = discord.Embed(title="**Cat fan detected!**", description=f"You was talking about a ***{breed}***, right?", color=COLOR)
+	embed.set_image(url=cat)
+	await message.channel.send(embed=embed)
+
 
 # ─── DATABASE ───────────────────────────────────────────────────────────────────
 
@@ -52,11 +63,25 @@ class user:
 
 	def more_cats(self, new_cats):
 		self.cat_counter += new_cats
-		self.last_time = time.time()
+		self.last_time = time()
 
 	def reset_cats(self):
 		self.cat_counter += 1
-		self.last_time = time.time()
+		self.last_time = time()
+
+
+keywords: list = ["cat", "kitty", "kitten", "kittycat", "kittens", "kittycats", "kitties"]
+
+# We collect the breeds of all the cats
+url = "https://api.thecatapi.com/v1/breeds"
+file = requests.get(url, allow_redirects=True).json()
+
+breeds: list = []
+ids: list = []
+
+for each in file:
+	breeds.append(each['name'].lower())
+	ids.append(each['id'])
 
 # ─── COMMANDS ───────────────────────────────────────────────────────────────────
 
@@ -70,44 +95,32 @@ async def cat(ctx):
 
 # ─── EVENTS ─────────────────────────────────────────────────────────────────────
 
+@bot.event
+async def on_ready():
+	for key in db.keys():
+		db.pop(key)
+	print("Bot is ready")
+
 from typing import List
 
 @bot.event
-async def on_ready():
-	# db = {
-	# 	"serverid": [list of users]
-	# }
-	print("Bot is ready")
-
-@bot.event
 async def on_message(message):
+	if message.author == bot.user:
+		return
 
-	# We see if the last time someone used the bot is more than a day, we just clear
-  the list (data is expensive) 	if time() - db[message.guild.id][0] >= 3600 * 24:
-	    db[message.guild.id][1].clear()
+	if message.content.startswith(DEFAULT_PREFIX):
+		bot.process_commands(message)
 
-	list_users = db[message.guild.id][1]
-	# We check if the user is registered
-	if message.author.id not in list_users:
-		# We register the user
-		list_users.append(user(message.guild.id, message.author.id, 0, time.time()))
-		print(f"{message.author.name} has been registered")
-	else:
-		if any(x in message.content.lower() for x in ["cat", "kitty", "kitten", "kittycat", "kittens", "kittycats", "kitties"]):
-			for keyw in ["cat", "kitty", "kitten", "kittycat", "kittens", "kittycats", "kitties"]:
-				if keyw in message.content.lower():
-					cat_counter += message.content.lower().count(keyw)
-			
-	  # Now we update the user
-			list_users[message.author.id].more_cats(cat_counter)
+	serverid = str(message.guild.id)
+	authid = str(message.author.id)
+	if serverid not in db:
+		# We add the server to the database
+		db[serverid] = [int(time()), {}]
 
-		if time.time() - list_users[message.author.id].last_time > 60:
-
-			list_users[message.author.id].reset_cats()
-		
-		else:
-			if list_users[message.author.id].cat_counter >= 3:
-				await reply(message)
-				list_users[message.author.id].reset_cats()
+	if authid not in db[serverid][1]:
+		# We add the user to the database
+		db[serverid][1][authid] = [message.guild.id, 1, int(time())]
+	
+	
 
 bot.run(DISCORD_TOKEN)
