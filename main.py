@@ -22,6 +22,16 @@ COLOR = 0xe36e00
 
 # ─── UTILS ──────────────────────────────────────────────────────────────────────
 
+url = "https://api.thecatapi.com/v1/breeds"
+file = requests.get(url, allow_redirects=True).json()
+
+breeds: list = []
+ids: list = []
+
+for each in file:
+	breeds.append(each['name'].lower())
+	ids.append(each['id'])
+
 async def reply(message):
 	# We reply with a random cat image
 	cat = requests.get(f'https://api.thecatapi.com/v1/images/search?api_key=c1404cc3-7fae-4c6e-8cb0-4d14303ae6d1').json()[0]
@@ -47,36 +57,10 @@ async def reply_breed(message, breed):
 
 # ─── DATABASE ───────────────────────────────────────────────────────────────────
 
-from dataclasses import dataclass
-
-@dataclass
-class user:
-	guild_id: int
-	user_id: int
-	cat_counter: int
-	last_time: int
-
-	def more_cats(self, new_cats):
-		self.cat_counter += new_cats
-		self.last_time = time()
-
-	def reset_cats(self):
-		self.cat_counter += 1
-		self.last_time = time()
-
 
 keywords: list = ["cat", "kitty", "kitten", "kittycat", "kittens", "kittycats", "kitties"]
 
 # We collect the breeds of all the cats
-url = "https://api.thecatapi.com/v1/breeds"
-file = requests.get(url, allow_redirects=True).json()
-
-breeds: list = []
-ids: list = []
-
-for each in file:
-	breeds.append(each['name'].lower())
-	ids.append(each['id'])
 
 # ─── COMMANDS ───────────────────────────────────────────────────────────────────
 
@@ -92,6 +76,7 @@ async def cat(ctx):
 
 @bot.event
 async def on_ready():
+	print(breeds)
 	for key in db.keys():
 		db.pop(key)
 	print("Bot is ready")
@@ -105,7 +90,7 @@ async def on_message(message):
 
 	if message.content.startswith(DEFAULT_PREFIX):
 		await bot.process_commands(message)
-    return
+		return
 
 	serverid = str(message.guild.id)
 	authid = str(message.author.id)
@@ -118,28 +103,31 @@ async def on_message(message):
 		# We add the user to the database
 		db[serverid][1][authid] = [message.guild.id, 1, int(time())]
 	
+	user = db[serverid][1][authid]
 	# We check if the user is talking about a cat
 	if any(x in message.content.lower() for x in ["cat", "kitty", "kitten", "kittycat", "kittens", "kittycats", "kitties"]):
-		user = db[serverid][1][authid]
 		new_cat_counter = 0
 		for keyw in ["cat", "kitty", "kitten", "kittycat", "kittens", "kittycats", "kitties"]:
 			if keyw in message.content.lower():
 				new_cat_counter += message.content.lower().count(keyw)
 
-		if currenttime - user[2] > 60:
+		print(currenttime - user[2])
+
+		if currenttime - user[2] >= 60:
 			user[1] = 0
 	# Now we update the user
 		user[1] += new_cat_counter
 		user[2] = currenttime
+		print(user[1])
 
-		if user[1] >= 3:
-			if any(x in message.content.lower() for x in breeds):
-				for breed in breeds:
-					if breed in message.content.lower():
-						await reply_breed(message, breed)
-			else:
-				await reply(message)
+	if user[1] >= 3 or any(x in message.content.lower() for x in breeds):
+		if user[1] >= 3:	
+			await reply(message)
+		else:
+			for breed in breeds:
+				if breed in message.content.lower():
+					await reply_breed(message, breed)
 			
-			user[1] = 0
+		user[1] = 0
 
 bot.run(DISCORD_TOKEN)
