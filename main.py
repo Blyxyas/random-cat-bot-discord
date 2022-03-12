@@ -7,13 +7,9 @@ from discord.ext import commands
 import requests #upm package(requests)
 from time import time
 
-from dotenv import load_dotenv, find_dotenv #upm package(dotenv)
 import os
 
-import pprint
-
 # We load the environment variables
-load_dotenv("x.env")
 
 DISCORD_TOKEN = os.environ['DISCORD_TOKEN']
  
