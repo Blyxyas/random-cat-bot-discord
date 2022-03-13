@@ -133,7 +133,6 @@ async def help(ctx):
 
 @bot.event
 async def on_ready():
-	print(breeds)
 	for key in db.keys():
 		db.pop(key)
 	print("Bot is ready")
@@ -156,6 +155,7 @@ async def on_message(message):
 
 	if message.content.startswith(db[serverid][2]):
 		await bot.process_commands(message)
+		return
 
 	if authid not in db[serverid][1]:
 		# We add the user to the database
@@ -174,7 +174,6 @@ async def on_message(message):
 	# Now we update the user
 		user[1] += new_cat_counter
 		user[2] = currenttime
-		print(user[1])
 
 	if user[1] >= db[serverid][3] or (any(x in message.content.lower() for x in breeds) and user[1] >= 1):
 		if user[1] >= db[serverid][3]:
@@ -187,7 +186,7 @@ async def on_message(message):
 		user[1] = 0
 
 @bot.event
-async def on_command_errro(ctx, error):
+async def on_command_error(ctx, error):
 	if isinstance(error, commands.CommandNotFound):
 		await ctx.send("Command not found")
 	elif isinstance(error, commands.MissingRequiredArgument):
