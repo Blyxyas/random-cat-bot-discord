@@ -7,16 +7,22 @@ from discord.ext import commands
 import requests
 from time import time 
 
+from keep_alive import keep_alive
+
 import os
 
 # We load the environment variables
 
-DISCORD_TOKEN = os.environ['DISCORD_TOKEN']
  
 DEFAULT_PREFIX = ">"
 
-bot = discord.Client()
-bot = commands.Bot(command_prefix=DEFAULT_PREFIX)
+async def determine_prefix(bot, message):
+	guild = str(message.guild.id)
+	if guild in db:
+		return db[guild][2]
+	return DEFAULT_PREFIX
+
+bot = commands.Bot(command_prefix = determine_prefix, help_command=None)
 
 COLOR = 0xe36e00
 
@@ -57,7 +63,6 @@ async def reply_breed(message, breed):
 
 # ─── DATABASE ───────────────────────────────────────────────────────────────────
 
-
 keywords: list = ["cat", "kitty", "kitten", "kittycat", "kittens", "kittycats", "kitties"]
 
 # We collect the breeds of all the cats
@@ -69,8 +74,56 @@ async def ping(ctx):
 	await ctx.send("Yes, I'm conected to the server")
 
 @bot.command()
-async def cat(ctx):
-	await reply(ctx)
+async def cat(ctx, breed = None):
+	if breed is None:
+		await reply(ctx)
+	else:
+		await reply_breed(ctx, breed)
+
+# ─── ADMIN COMMANDS ─────────────────────────────────────────────────────────────
+
+
+@bot.command()
+async def setprefix(ctx, new_prefix = None):
+	#You'd obviously need to do some error checking here
+	#All I'm doing here is if prefixes is not passed then
+	#set it to default 
+	if new_prefix is None:
+		await ctx.send("Please enter a prefix")
+		return
+	db[str(ctx.guild.id)][2] = new_prefix
+	await ctx.send("Prefix set!")
+
+@bot.command()
+async def settolerance(ctx, new_tolerance = None):
+	if new_tolerance is None:
+		await ctx.send("Please enter a tolerance")
+		return
+	db[str(ctx.guild.id)][3] = new_tolerance
+	await ctx.send("Tolerance set!")
+
+@bot.command()
+async def config(ctx):
+	embed = discord.Embed(title="**Configuration**", description="Here are the current settings", color=COLOR)
+
+	embed.add_field(name="Prefix", value=f"**{db[str(ctx.guild.id)][2]}**, the prefix needed to use the commands. **Default: `\">\"`**, use `{db[str(ctx.guild.id)][2]}setprefix NEW PREFIX` to change the prefix", inline=False)
+	
+	embed.add_field(name="Tolerance", value=f"Current: **{db[str(ctx.guild.id)][3]}**, The amount of times a user must mention \"cat words\" ('cat', 'kitty', etc...) to send a cat picture. **Default: *3***, use `{db[str(ctx.guild.id)][2]}settolerance NEW TOLERANCE` to change the tolerance", inline=False)
+
+	await ctx.channel.send(embed=embed)
+
+@bot.command()
+async def help(ctx):
+	embed = discord.Embed(title="**Help**")
+	embed.add_field(name="**`cat`**", value="Get a random cat image, you can use `cat [breed]` to request for a specific breed.", inline=False)
+	embed.add_field(name="**`help`", value="Get this message", inline=False)
+	# if the user is an admin
+	if ctx.author.guild_permissions.administrator:
+		embed.add_field(name="**`ping` (Admin)**", value="Check if the bot is online", inline=False)
+		embed.add_field(name="**`config` (Admin)**", value="Change the settings for the bot", inline=False)
+
+	# Now we reply
+	await ctx.message.reply(embed=embed)
 
 # ─── EVENTS ─────────────────────────────────────────────────────────────────────
 
@@ -81,29 +134,24 @@ async def on_ready():
 		db.pop(key)
 	print("Bot is ready")
 
-from typing import List
-
 @bot.event
 async def on_message(message):
 	serverid = str(message.guild.id)
 	authid = str(message.author.id)
 	currenttime = int(time())
 	
-	if serverid in db:
+	if serverid not in db:
+		# We add the server to the database
+		db[serverid] = [currenttime, {}, ">", 3]
+	else:
 		if currenttime - db[serverid][0] > 3600:
 			del db[serverid]
 	
 	if message.author == bot.user:
 		return
 
-	if message.content.startswith(DEFAULT_PREFIX):
+	if message.content.startswith(db[serverid][2]):
 		await bot.process_commands(message)
-		return
-
-	
-	if serverid not in db:
-		# We add the server to the database
-		db[serverid] = [currenttime, {}]
 
 	if authid not in db[serverid][1]:
 		# We add the user to the database
@@ -117,8 +165,6 @@ async def on_message(message):
 			if keyw in message.content.lower():
 				new_cat_counter += message.content.lower().count(keyw)
 
-		print(currenttime - user[2])
-
 		if currenttime - user[2] >= 30:
 			user[1] = 0
 	# Now we update the user
@@ -126,9 +172,8 @@ async def on_message(message):
 		user[2] = currenttime
 		print(user[1])
 
-
-	if user[1] >= 3 or (any(x in message.content.lower() for x in breeds) and user[1] >= 1):
-		if user[1] >= 3:	
+	if user[1] >= db[serverid][3] or (any(x in message.content.lower() for x in breeds) and user[1] >= 1):
+		if user[1] >= db[serverid][3]:
 			await reply(message)
 		else:
 			for breed in breeds:
@@ -137,4 +182,6 @@ async def on_message(message):
 			
 		user[1] = 0
 
+keep_alive()
+DISCORD_TOKEN = os.environ['DISCORD_TOKEN']
 bot.run(DISCORD_TOKEN)
