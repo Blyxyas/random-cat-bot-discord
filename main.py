@@ -1,11 +1,11 @@
 
 from replit import db
 
-import discord #upm package(py-cord)
+import discord
 from discord.ext import commands
 
-import requests #upm package(requests)
-from time import time
+import requests
+from time import time 
 
 import os
 
@@ -87,10 +87,10 @@ from typing import List
 async def on_message(message):
 	serverid = str(message.guild.id)
 	authid = str(message.author.id)
-	user = db[serverid][1][authid]
 	currenttime = int(time())
 	
-	if currenttime - db[serverid][0] > 3600:
+	if serverid in db:
+		if currenttime - db[serverid][0] > 3600:
 			del db[serverid]
 	
 	if message.author == bot.user:
@@ -108,6 +108,7 @@ async def on_message(message):
 	if authid not in db[serverid][1]:
 		# We add the user to the database
 		db[serverid][1][authid] = [message.guild.id, 1, int(time())]
+	user = db[serverid][1][authid]
 	
 	# We check if the user is talking about a cat
 	if any(x in message.content.lower() for x in ["cat", "kitty", "kitten", "kittycat", "kittens", "kittycats", "kitties"]):

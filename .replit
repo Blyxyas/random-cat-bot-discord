@@ -1,2 +1,2 @@
 language = "bash"
-run = "source venv/bin/activate; python main.py"
+run = "python main.py"
