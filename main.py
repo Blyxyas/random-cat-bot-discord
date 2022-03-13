@@ -99,6 +99,10 @@ async def settolerance(ctx, new_tolerance = None):
 	if new_tolerance is None:
 		await ctx.send("Please enter a tolerance")
 		return
+	if type(new_tolerance) is not int:
+		await ctx.send("Please enter a number.")
+		return
+
 	db[str(ctx.guild.id)][3] = new_tolerance
 	await ctx.send("Tolerance set!")
 
@@ -181,6 +185,13 @@ async def on_message(message):
 					await reply_breed(message, breed)
 			
 		user[1] = 0
+
+@bot.event
+async def on_command_errro(ctx, error):
+	if isinstance(error, commands.CommandNotFound):
+		await ctx.send("Command not found")
+	elif isinstance(error, commands.MissingRequiredArgument):
+		await ctx.send("Missing argument")
 
 keep_alive()
 DISCORD_TOKEN = os.environ['DISCORD_TOKEN']
