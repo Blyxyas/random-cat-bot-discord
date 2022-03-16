@@ -130,11 +130,20 @@ async def help(ctx):
 	await ctx.message.reply(embed=embed)
 
 # ─── EVENTS ─────────────────────────────────────────────────────────────────────
+from itertools import cycle
+status = cycle(["use >help", "KittyCat Pictures 3000"])
+
+from discord.ext import tasks
+
+@tasks.loop(seconds=10)
+async def change_status():
+  await bot.change_presence(activity=discord.Game(next(status)))
 
 @bot.event
 async def on_ready():
 	for key in db.keys():
 		db.pop(key)
+	change_status.start()
 	print("Bot is ready")
 
 @bot.event
