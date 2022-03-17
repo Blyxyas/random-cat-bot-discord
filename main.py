@@ -10,6 +10,7 @@ from time import time
 from keep_alive import keep_alive
 
 import os
+from random import randint
 
 # We load the environment variables
 
@@ -129,15 +130,51 @@ async def help(ctx):
 	# Now we reply
 	await ctx.message.reply(embed=embed)
 
+@bot.command()
+async def blockchannel(ctx):
+	ctx.repl
+
+"""
+According to all known laws
+of aviation,
+
+  
+there is no way a bee
+should be able to fly.
+
+  
+Its wings are too small to get
+its fat little body off the ground.
+
+  
+The bee, of course, flies anyway
+
+  
+because bees don't care
+what humans think is impossible
+"""
+
 # ─── EVENTS ─────────────────────────────────────────────────────────────────────
 from itertools import cycle
-status = cycle(["use >help", "KittyCat Pictures 3000"])
+status = cycle([f'with {randint(0, 3000)} kittens', f'thanks to the cat power', 'now I have superpowers', 'now I can fly yo wtf', 'according to all known laws of aviation,', 'there is no way a bee should be able to fly', 'Its wings are too small to get', 'its fat little body off the ground', 'the bee, of course, flies anyway', "because bees don't care", 'what humans think is possible'])
 
 from discord.ext import tasks
-
-@tasks.loop(seconds=10)
+@tasks.loop(seconds=20)
 async def change_status():
   await bot.change_presence(activity=discord.Game(next(status)))
+
+@bot.command
+async def blockchannel(ctx):
+	if ctx.author.guild_permissions.administrator:
+		if ctx.channel.id in db[str(ctx.guild.id)][4]:
+			db[str(ctx.guild.id)][4].remove(ctx.channel.id)
+			await ctx.send("Channel unblocked!")
+		else:
+			db[str(ctx.guild.id)][4].append(ctx.channel.id)
+			await ctx.send("Channel blocked!")
+			
+	else:
+		await ctx.send("You don't have permission to do that!")
 
 @bot.event
 async def on_ready():
@@ -151,15 +188,15 @@ async def on_message(message):
 	serverid = str(message.guild.id)
 	authid = str(message.author.id)
 	currenttime = int(time())
-	
+
 	if serverid not in db:
 		# We add the server to the database
-		db[serverid] = [currenttime, {}, ">", 3]
+		db[serverid] = [currenttime, {}, ">", 3, []]
 	else:
 		if currenttime - db[serverid][0] > 3600:
 			del db[serverid]
-	
-	if message.author == bot.user:
+
+	if message.author == bot.user or message.channel.id in db[serverid][4]:
 		return
 
 	if message.content.startswith(db[serverid][2]):
