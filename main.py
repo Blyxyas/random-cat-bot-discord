@@ -196,11 +196,15 @@ async def on_message(message):
 		if currenttime - db[serverid][0] > 3600:
 			del db[serverid]
 
-	if message.author == bot.user or message.channel.id in db[serverid][4]:
+	if message.author:
 		return
 
 	if message.content.startswith(db[serverid][2]):
 		await bot.process_commands(message)
+		return
+
+	if message.content.startswith(db[serverid][2] + "blockchannel"):
+		await blockchannel(message)
 		return
 
 	if authid not in db[serverid][1]:
