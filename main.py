@@ -199,13 +199,14 @@ async def on_message(message):
 	if message.author:
 		return
 
-	if message.content.startswith(db[serverid][2]):
-		await bot.process_commands(message)
-		return
-
 	if message.content.startswith(db[serverid][2] + "blockchannel"):
 		await blockchannel(message)
 		return
+
+	elif message.content.startswith(db[serverid][2]):
+		await bot.process_commands(message)
+		return
+
 
 	if authid not in db[serverid][1]:
 		# We add the user to the database
